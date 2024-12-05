@@ -187,6 +187,60 @@ def astar(draw, grid, start, end):
 
   return False
 
+def greedy(draw, grid, start, end):
+  count = 0
+  open_set = PriorityQueue()
+  open_set.put((0, count, start))  # put just adds(term for append), the 0 is our f_cost
+  # add the start node to the open set, count keeps track of when node was inserted
+  came_from = {}  # where each node came from so we can retrace path at the end
+  g_score = {node: float("inf") for row in grid for node in row}  # all nodes start at
+  # infinty distance away from start node as there's no path to get there yet
+  g_score[start] = 0  # g_score is distance from start, so 0 for start
+  f_score = {node: float("inf") for row in grid for node in row}
+  f_score[start] = heuristic(start.getpos(), end.getpos())  # estimate start- end distance
+
+  open_set_tracker = {start}  # set to keep track of presents of nodes in priority queue
+  # so we can determine if a node needs to be evaluated or not
+  while not open_set.empty():  # if open set is empty we've considered every node
+    # that is 'promising', if no path is yet found then there is no path to end
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        pygame.quit()  # so we can exit function if takes too long or error occurs
+
+    current = open_set.get()[2]  # get the node from the priority queue
+    # the priority queue will mean we get the node with the lowest f-cost(the most
+    # promising node),if the f-cost is the same then go by count(order of entery into queue)
+    open_set_tracker.remove(current)  # we are now looking at current so its no longer
+    # a part of the open set
+    if current == end:
+      reconstruct_path(came_from, end, draw)  # call function to draw shortest path
+      end.makeend()  # so we can see the end node
+      start.makestart()
+      return True
+
+    for neighbor in current.neighbors:  # look at every neighbor of current
+      temp_g_score = g_score[current] + heuristic(current.getpos(), neighbor.getpos())
+
+      if temp_g_score < g_score[neighbor]:  # if we have found a shorter path to neighbor
+        came_from[neighbor] = current  # update so that current node is stored as path to
+        # get to neighbor
+        g_score[neighbor] = temp_g_score  # new distance away from start node
+        f_score[neighbor] = heuristic(neighbor.getpos(), end.getpos())
+        if neighbor not in open_set_tracker:  # if not in open_set queue we need to add it
+          count = count + 1
+          open_set.put((f_score[neighbor], count, neighbor))
+          open_set_tracker.add(neighbor)  # we also need to add it to our tracker set
+          neighbor.makeopen()  # add open to the attribute of this neighbor as we have put
+          # it in open set so it will turn orange
+    draw()
+
+    if current != start:
+      current.makeclose()  # we have finished looking at all the neighbors of this node
+      # so we add closed as an attribute and turn it to blue
+
+  return False
+
+
 def dijkstra(draw, grid, start, end):
   count = 0
   open_set = PriorityQueue()
@@ -239,7 +293,7 @@ def dijkstra(draw, grid, start, end):
 
 def play(draw, start, end):
   came_from = {} #where each node came from so we can retrace path at the end
-  found = False
+  found = False #while the end node is not reached
   current = start
   while not found: #if open set is empty we've considered every node
       #that is 'promising', if no path is yet found then there is no path to end
@@ -427,6 +481,18 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
                   node.makeplain()
 
             dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
+
+        if event.key == pygame.K_g and start and end:
+          #check to make sure there is a start and end node before algorithm is run
+            for row in grid: #for every node when we start a new map we must
+              for node in row: # update all of the neighbors for this new setup of nodes
+                node.update_neighbors(grid)
+                if node.isopen() or node.ispath() or node.isclosed():
+                  node.makeplain()
+
+            greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
 
         if event.key == pygame.K_p and start and end:
           #check to make sure there is a start and end node before algorithm is run
