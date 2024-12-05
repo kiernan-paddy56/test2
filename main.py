@@ -54,6 +54,9 @@ class Node:
   def isend(self):
     return self.color == RED #is node the end node
 
+  def ispath2(self):
+    return self.color == MAGENTA #is node the end node
+
   def isplain(self):
     return self.color == WHITE # is node a plain node
 
@@ -71,6 +74,9 @@ class Node:
 
   def makeend(self):
     self.color = RED #chosen as end node
+
+  def makepath2(self):
+    self.color = MAGENTA #chosen as end node
 
   def makeplain(self):
     self.color = WHITE #switch back to plain node
@@ -118,6 +124,13 @@ class Node:
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
 
   
+def reset(grid):
+  for row in grid:  # for every node when we start a new map we must
+    for node in row:  # update all of the neighbors for this new setup of nodes
+      node.update_neighbors(grid)
+      if node.isopen() or node.ispath() or node.isclosed() or node.ispath2():
+        node.makeplain()
+
 
 def heuristic(p1, p2): # finds shortest distance between 2 points
   x1, y1 = p1 # point 1
@@ -151,8 +164,10 @@ def astar(draw, grid, start, end):
   while not open_set.empty(): #if open set is empty we've considered every node
     #that is 'promising', if no path is yet found then there is no path to end
     for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        pygame.quit() #so we can exit function if takes too long or error occurs
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid)
+          return True #allows exit before end is found
 
     current = open_set.get()[2] #get the node from the priority queue
     #the priority queue will mean we get the node with the lowest f-cost(the most 
@@ -203,9 +218,11 @@ def greedy(draw, grid, start, end):
   # so we can determine if a node needs to be evaluated or not
   while not open_set.empty():  # if open set is empty we've considered every node
     # that is 'promising', if no path is yet found then there is no path to end
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        pygame.quit()  # so we can exit function if takes too long or error occurs
+    for event in pygame.event.get(): #allows us to exit before finish
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid)
+          return True
 
     current = open_set.get()[2]  # get the node from the priority queue
     # the priority queue will mean we get the node with the lowest f-cost(the most
@@ -256,8 +273,10 @@ def dijkstra(draw, grid, start, end):
   while not open_set.empty(): #if open set is empty we've considered every node
       #that is 'promising', if no path is yet found then there is no path to end
     for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-          pygame.quit() #so we can exit function if takes too long or error occurs
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid)
+          return True
 
     current = open_set.get()[2] #get the node from the priority queue
       #the priority queue will mean we get the node with the lowest f-cost(the most 
@@ -291,16 +310,17 @@ def dijkstra(draw, grid, start, end):
 
   return False
 
-def play(draw, start, end):
+def play(draw, grid, start, end):
   came_from = {} #where each node came from so we can retrace path at the end
   found = False #while the end node is not reached
   current = start
   while not found: #if open set is empty we've considered every node
       #that is 'promising', if no path is yet found then there is no path to end
     for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-          pygame.quit() #so we can exit function if takes too long or error occurs
-  # a part of the open set
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid)
+          return True
     
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_d:
@@ -321,7 +341,7 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_s:
           for neighbor in current.neighbors: 
-            if current.col + 1 == neighbor.col and current.row == neighbor.row: 
+            if current.col + 1 == neighbor.col and current.row == neighbor.row:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
@@ -329,7 +349,7 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_w:
           for neighbor in current.neighbors: 
-            if current.col - 1 == neighbor.col and current.row == neighbor.row: 
+            if current.col - 1 == neighbor.col and current.row == neighbor.row:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
@@ -337,7 +357,7 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_z:
           for neighbor in current.neighbors: 
-            if current.row - 1 == neighbor.row and current.col == neighbor.col -1: 
+            if current.row - 1 == neighbor.row and current.col == neighbor.col -1:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
@@ -345,7 +365,7 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_q:
           for neighbor in current.neighbors: 
-            if current.row - 1 == neighbor.row and current.col == neighbor.col +1: 
+            if current.row - 1 == neighbor.row and current.col == neighbor.col +1:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
@@ -353,7 +373,7 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_e:
           for neighbor in current.neighbors: 
-            if current.row + 1 == neighbor.row and current.col == neighbor.col +1: 
+            if current.row + 1 == neighbor.row and current.col == neighbor.col +1:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
@@ -361,19 +381,135 @@ def play(draw, start, end):
 
         elif event.key == pygame.K_c:
           for neighbor in current.neighbors: 
-            if current.row + 1 == neighbor.row and current.col == neighbor.col -1: 
+            if current.row + 1 == neighbor.row and current.col == neighbor.col -1:
               came_from[neighbor] = current
               neighbor.makeclose()
               current.makeopen()
               current = neighbor
-              
+
     if current == end:
-      reconstruct_path(came_from, end, draw) #call function to draw shortest path
+      for row in grid:  # for every node when we start a new map we must
+        for node in row:
+          if node.isopen():
+            node.makepath()
+      #call function to draw shortest path
       end.makeend() #so we can see the end and start nodes
       start.makestart()
       found = True
       return True
       
+    draw()
+
+  return False
+
+
+def versus(draw, grid, start, end):
+  came_from = {}  # where each node came from so we can retrace path at the end
+  came_from2 = {}
+  found = False  # while the end node is not reached
+  current = start
+  current2 = start
+  while not found:  # if open set is empty we've considered every node
+    # that is 'promising', if no path is yet found then there is no path to end
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        pygame.quit()  # so we can exit function if takes too long or error occurs
+      # a part of the open set
+
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid)
+          return True
+
+        elif event.key == pygame.K_d:
+          for neighbor in current.neighbors:
+            if current.row + 1 == neighbor.row and current.col == neighbor.col:
+              came_from[neighbor] = current
+              neighbor.makeclose()
+              current.makeopen()
+              current = neighbor
+
+        elif event.key == pygame.K_a:
+          for neighbor in current.neighbors:
+            if current.row - 1 == neighbor.row and current.col == neighbor.col:
+              came_from[neighbor] = current
+              neighbor.makeclose()
+              current.makeopen()
+              current = neighbor
+
+        elif event.key == pygame.K_s:
+          for neighbor in current.neighbors:
+            if current.col + 1 == neighbor.col and current.row == neighbor.row:
+              came_from[neighbor] = current
+              neighbor.makeclose()
+              current.makeopen()
+              current = neighbor
+
+        elif event.key == pygame.K_w:
+          for neighbor in current.neighbors:
+            if current.col - 1 == neighbor.col and current.row == neighbor.row:
+              came_from[neighbor] = current
+              neighbor.makeclose()
+              current.makeopen()
+              current = neighbor
+
+
+        elif event.key == pygame.K_RIGHT:
+          for neighbor in current2.neighbors:
+            if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
+              came_from2[neighbor] = current2
+              neighbor.makeclose()
+              current2.makepath2()
+              current2 = neighbor
+
+        elif event.key == pygame.K_LEFT:
+          for neighbor in current2.neighbors:
+            if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
+              came_from2[neighbor] = current2
+              neighbor.makeclose()
+              current2.makepath2()
+              current2 = neighbor
+
+        elif event.key == pygame.K_DOWN:
+          for neighbor in current2.neighbors:
+            if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
+              came_from2[neighbor] = current2
+              neighbor.makeclose()
+              current2.makepath2()
+              current2 = neighbor
+
+        elif event.key == pygame.K_UP:
+          for neighbor in current2.neighbors:
+            if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
+              came_from2[neighbor] = current2
+              neighbor.makeclose()
+              current2.makepath2()
+              current2 = neighbor
+
+
+
+    if current == end:
+      for row in grid:  # for every node when we start a new map we must
+        for node in row:
+          if node.isopen():
+            node.makepath()
+      # call function to draw shortest path
+      end.makeend()  # so we can see the end and start nodes
+      start.makestart()
+      found = True
+      return True
+
+    elif current2 == end:
+      for row in grid:  # for every node when we start a new map we must
+        for node in row:
+          if node.ispath2():
+            node.makepath()
+      # call function to draw shortest path
+      end.makeend()  # so we can see the end and start nodes
+      start.makestart()
+      found = True
+      return True
+
     draw()
 
   return False
@@ -430,7 +566,6 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
       
       if event.type == pygame.QUIT: #if cross is hit in corner
         run = False
-
       if pygame.mouse.get_pressed()[0]: #if left mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
         node = grid[row][col]
@@ -440,7 +575,7 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
         elif not end and node != start:
           end = node
           end.makeend()
-        elif node != start and node != end:
+        elif node != start and node != end and not node.isblock():
           node.makeblock()
       elif pygame.mouse.get_pressed()[2]: #if right mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
@@ -454,11 +589,7 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_a and start and end:
         #check to make sure there is a start and end node before algorithm is run
-          for row in grid: #for every node when we start a new map we must
-            for node in row: # update all of the neighbors for this new setup of nodes
-              node.update_neighbors(grid)
-              if node.isopen() or node.ispath() or node.isclosed():
-                node.makeplain()
+          reset(grid) #removes all except the walls, start and end nodes
 
           astar(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 # this calls the algorithm that we are using and has a function within it (draw())
@@ -466,43 +597,40 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
 # to know everything from the draw function
 # we need this so that when we try to run the algorithm it calls the draw function
 # so it is visually displayed
-        if event.key == pygame.K_c:
+        if event.key == pygame.K_c: #clear all
           start = None
           end = None
           grid = makegrid(ROWS, width)
+
+        if event.key == pygame.K_r: #clear all
+          reset(grid)
         
         
         if event.key == pygame.K_d and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            for row in grid: #for every node when we start a new map we must
-              for node in row: # update all of the neighbors for this new setup of nodes
-                node.update_neighbors(grid)
-                if node.isopen() or node.ispath() or node.isclosed():
-                  node.makeplain()
+            reset(grid) #removes all except the walls, start and end nodes
 
             dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
         if event.key == pygame.K_g and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            for row in grid: #for every node when we start a new map we must
-              for node in row: # update all of the neighbors for this new setup of nodes
-                node.update_neighbors(grid)
-                if node.isopen() or node.ispath() or node.isclosed():
-                  node.makeplain()
+            reset(grid) #removes all except the walls, start and end nodes
 
             greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
+        if event.key == pygame.K_v and start and end:
+          #check to make sure there is a start and end node before algorithm is run
+            reset(grid) #removes all except the walls, start and end nodes
+
+            versus(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
         if event.key == pygame.K_p and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            for row in grid: #for every node when we start a new map we must
-              for node in row: # update all of the neighbors for this new setup of nodes
-                node.update_neighbors(grid)
-                if node.isopen() or node.ispath() or node.isclosed():
-                  node.makeplain()
+            reset(grid) #removes all except the walls, start and end nodes
 
-            play(lambda: draw(screen, grid, ROWS, width), start, end)
+            play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
           
         
   pygame.quit()
