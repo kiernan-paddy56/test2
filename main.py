@@ -1,7 +1,8 @@
-import pygame, sys, math
+import pygame, sys, math, time
 from queue import PriorityQueue
 from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
+import sqlite3
 
 WIDTH = 800
 pygame.init()
@@ -124,12 +125,14 @@ class Node:
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
 
   
-def reset(grid):
+def reset(grid, start, end):
   for row in grid:  # for every node when we start a new map we must
     for node in row:  # update all of the neighbors for this new setup of nodes
       node.update_neighbors(grid)
       if node.isopen() or node.ispath() or node.isclosed() or node.ispath2():
         node.makeplain()
+  start.makestart()
+  end.makeend()
 
 
 def heuristic(p1, p2): # finds shortest distance between 2 points
@@ -145,7 +148,8 @@ def reconstruct_path(came_from, current, draw):
     current.makepath()
     draw()
 
-  
+
+
 
 def astar(draw, grid, start, end):
   count = 0
@@ -166,7 +170,7 @@ def astar(draw, grid, start, end):
     for event in pygame.event.get():
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_r:
-          reset(grid)
+          reset(grid, start, end)
           return True #allows exit before end is found
 
     current = open_set.get()[2] #get the node from the priority queue
@@ -221,7 +225,7 @@ def greedy(draw, grid, start, end):
     for event in pygame.event.get(): #allows us to exit before finish
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_r:
-          reset(grid)
+          reset(grid, start, end)
           return True
 
     current = open_set.get()[2]  # get the node from the priority queue
@@ -275,7 +279,7 @@ def dijkstra(draw, grid, start, end):
     for event in pygame.event.get():
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_r:
-          reset(grid)
+          reset(grid, start, end)
           return True
 
     current = open_set.get()[2] #get the node from the priority queue
@@ -319,7 +323,7 @@ def play(draw, grid, start, end):
     for event in pygame.event.get():
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_r:
-          reset(grid)
+          reset(grid, start, end)
           return True
     
       if event.type == pygame.KEYDOWN:
@@ -418,7 +422,7 @@ def versus(draw, grid, start, end):
 
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_r:
-          reset(grid)
+          reset(grid, start, end)
           return True
 
         elif event.key == pygame.K_d:
@@ -589,7 +593,7 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_a and start and end:
         #check to make sure there is a start and end node before algorithm is run
-          reset(grid) #removes all except the walls, start and end nodes
+          reset(grid, start, end) #removes all except the walls, start and end nodes
 
           astar(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 # this calls the algorithm that we are using and has a function within it (draw())
@@ -603,32 +607,32 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           grid = makegrid(ROWS, width)
 
         if event.key == pygame.K_r: #clear all
-          reset(grid)
+          reset(grid, start, end)
         
         
         if event.key == pygame.K_d and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            reset(grid) #removes all except the walls, start and end nodes
+            reset(grid, start, end) #removes all except the walls, start and end nodes
 
             dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
         if event.key == pygame.K_g and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            reset(grid) #removes all except the walls, start and end nodes
+            reset(grid, start, end) #removes all except the walls, start and end nodes
 
             greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
         if event.key == pygame.K_v and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            reset(grid) #removes all except the walls, start and end nodes
+            reset(grid, start, end) #removes all except the walls, start and end nodes
 
             versus(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
         if event.key == pygame.K_p and start and end:
           #check to make sure there is a start and end node before algorithm is run
-            reset(grid) #removes all except the walls, start and end nodes
+            reset(grid, start, end) #removes all except the walls, start and end nodes
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
           
