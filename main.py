@@ -4,6 +4,8 @@ from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
 import sqlite3
 
+connection = sqlite3.connect('maps.db')
+
 WIDTH = 800
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, WIDTH)) #frame size of 800 by 800
@@ -26,11 +28,11 @@ class Node:
 
   def __init__(self, row, col, width, totalrows):
     self.row = row
-    self.col = col 
+    self.col = col
     self.x = row * width
     self.y = col * width #finds the position of the node given its coordinates and width
     self.color = WHITE #all nodes start as being white(empty space/ free block)
-    self.width = width #width and height of the blocks 
+    self.width = width #width and height of the blocks
     self.neighbors = [] #array for all the neighbors of a node
     self.totalrows = totalrows
 
@@ -89,42 +91,42 @@ class Node:
     pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.width))
     #only parameter needed to draw the node when we call it later will be screen
     #the rest of the parameters here are stored as atributes
-  
+
 
   def update_neighbors(self, grid): #so we know all of the available neighbors to a node
     self.neighbors = [] #create array for neighbors to go into, stored as an attribute
-    
+
     if self.row < self.totalrows -1 and not grid[self.row+1][self.col].isblock(): #down
       self.neighbors.append(grid[self.row+1][self.col]) #is node below available
       #we need the -1 as we start from 0 in rows so the last row is totalrows -1
-    
+
     if self.row > 0 and not grid[self.row-1][self.col].isblock(): #up
       self.neighbors.append(grid[self.row-1][self.col]) #is node above available
-      
+
     if self.col < self.totalrows -1 and not grid[self.row][self.col+1].isblock(): #right
       self.neighbors.append(grid[self.row][self.col+1]) #is node right available
-      
+
     if self.col > 0 and not grid[self.row][self.col-1].isblock(): #left
       self.neighbors.append(grid[self.row][self.col-1]) #is node left available
-      
-    if self.col > 0 and self.row > 0 and not grid[self.row-1][self.col-1].isblock(): 
+
+    if self.col > 0 and self.row > 0 and not grid[self.row-1][self.col-1].isblock():
       #leftup
       self.neighbors.append(grid[self.row-1][self.col-1]) #is node leftup available
-      
+
     if self.col > 0 and self.row < self.totalrows -1 and \
     not grid[self.row+1][self.col-1].isblock(): #leftdown
       self.neighbors.append(grid[self.row+1][self.col-1]) #is node leftdown available
 
-    
+
     if self.row > 0 and self.col < self.totalrows -1 and \
     not grid[self.row-1][self.col+1].isblock(): #rightup
       self.neighbors.append(grid[self.row-1][self.col+1]) #is node righup available
-      
+
     if self.row < self.totalrows -1 and self.col < self.totalrows -1 and\
     not grid[self.row+1][self.col+1].isblock(): #rightdown
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
 
-  
+
 def reset(grid, start, end):
   for row in grid:  # for every node when we start a new map we must
     for node in row:  # update all of the neighbors for this new setup of nodes
@@ -148,16 +150,13 @@ def reconstruct_path(came_from, current, draw):
     current.makepath()
     draw()
 
-
-
-
-def astar(draw, grid, start, end):
+def greedy1(draw, grid, start, end):
   count = 0
   open_set = PriorityQueue()
   open_set.put((0, count, start))   #put just adds(term for append), the 0 is our f_cost
   #add the start node to the open set, count keeps track of when node was inserted
   came_from = {} #where each node came from so we can retrace path at the end
-  g_score = {node: float("inf") for row in grid for node in row} #all nodes start at 
+  g_score = {node: float("inf") for row in grid for node in row} #all nodes start at
   #infinty distance away from start node as there's no path to get there yet
   g_score[start] = 0 #g_score is distance from start, so 0 for start
   f_score = {node: float("inf") for row in grid for node in row}
@@ -174,12 +173,67 @@ def astar(draw, grid, start, end):
           return True #allows exit before end is found
 
     current = open_set.get()[2] #get the node from the priority queue
-    #the priority queue will mean we get the node with the lowest f-cost(the most 
-#promising node),if the f-cost is the same then go by count(order of entery into queue)
+    #the priority queue will mean we get the node with the lowest f-cost(the most
+#promising node),if the f-cost is the same then go by count(order of entry into queue)
     open_set_tracker.remove(current) #we are now looking at current so its no longer
 # a part of the open set
     if current == end:
-      reconstruct_path(came_from, end, draw) #call function to draw shortest path
+      reconstruct_path(came_from, end, draw) #call function to draw the shortest path
+      end.makeend() #so we can see the end node
+      start.makestart()
+      return True
+
+    for neighbor in current.neighbors: #look at every neighbor of current
+      temp_g_score = g_score[current] + heuristic(current.getpos(),neighbor.getpos())
+
+      if temp_g_score < g_score[neighbor]: #if we have found a shorter path to neighbor
+        came_from[neighbor] = current #update so that current node is stored as path to
+        #get to neighbor
+        g_score[neighbor] = temp_g_score #new distance away from start node
+        f_score[neighbor] =  heuristic(neighbor.getpos(),end.getpos())
+        if neighbor not in open_set_tracker: #if not in open_set queue we need to add it
+          count = count + 1
+          open_set.put((f_score[neighbor], count, neighbor))
+          open_set_tracker.add(neighbor) #we also need to add it to our tracker set
+          neighbor.makeopen() #add open to the attribute of this neighbor as we have put
+          #it in open set so it will turn orange
+    draw()
+
+    if current != start:
+      current.makeclose() #we have finished looking at all the neighbors of this node
+      # so we add closed as an attribute and turn it to blue
+
+  return False
+
+def astar(draw, grid, start, end):
+  count = 0
+  open_set = PriorityQueue()
+  open_set.put((0, count, start))   #put just adds(term for append), the 0 is our f_cost
+  #add the start node to the open set, count keeps track of when node was inserted
+  came_from = {} #where each node came from so we can retrace path at the end
+  g_score = {node: float("inf") for row in grid for node in row} #all nodes start at
+  #infinty distance away from start node as there's no path to get there yet
+  g_score[start] = 0 #g_score is distance from start, so 0 for start
+  f_score = {node: float("inf") for row in grid for node in row}
+  f_score[start] = heuristic(start.getpos(), end.getpos()) #estimate start- end distance
+
+  open_set_tracker = {start} #set to keep track of presents of nodes in priority queue
+# so we can determine if a node needs to be evaluated or not
+  while not open_set.empty(): #if open set is empty we've considered every node
+    #that is 'promising', if no path is yet found then there is no path to end
+    for event in pygame.event.get():
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid, start, end)
+          return True #allows exit before end is found
+
+    current = open_set.get()[2] #get the node from the priority queue
+    #the priority queue will mean we get the node with the lowest f-cost(the most
+#promising node),if the f-cost is the same then go by count(order of entry into queue)
+    open_set_tracker.remove(current) #we are now looking at current so its no longer
+# a part of the open set
+    if current == end:
+      reconstruct_path(came_from, end, draw) #call function to draw the shortest path
       end.makeend() #so we can see the end node
       start.makestart()
       return True
@@ -206,17 +260,130 @@ def astar(draw, grid, start, end):
 
   return False
 
+
+def hillrfs(draw, grid, start, end):
+  count = 0
+  open_set = PriorityQueue()
+  open_set.put((0, count, start))  # put just adds(term for append), the 0 is our f_cost
+  # add the start node to the open set, count keeps track of when node was inserted
+  came_from = {}  # where each node came from so we can retrace path at the end
+  closed_set = set()
+  closed_set.add(start)
+  f_score = {node: float("inf") for row in grid for node in row}
+  f_score[start] = heuristic(start.getpos(), end.getpos())  # estimate start-end distance
+
+  open_set_tracker = {start}  # set to keep track of presents of nodes in priority queue
+  # so we can determine if a node needs to be evaluated or not
+  while not open_set.empty():  # if open set is empty we've considered every node
+    # that is 'promising', if no path is yet found then there is no path to end
+    for event in pygame.event.get():  # allows us to exit before finish
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid, start, end)
+          return True
+
+    current = open_set.get()[2]  # get the node from the priority queue
+    # the priority queue will mean we get the node with the lowest f-cost(the most
+    # promising node),if the f-cost is the same then go by count(order of entry into queue)
+    open_set_tracker.remove(current)  # we are now looking at current so its no longer
+    # a part of the open set
+
+    if current == end:
+      current.makeclose()
+      reconstruct_path(came_from, end, draw)  # call function to draw shortest path
+      end.makeend()  # so we can see the end node
+      start.makestart()
+      return True
+
+    for neighbor in current.neighbors:  # look at every neighbor of current
+      if neighbor not in closed_set:
+        f_score[neighbor] = heuristic(neighbor.getpos(), end.getpos())
+        if neighbor not in open_set_tracker:  # if not in open_set queue we need to add it
+          count = count + 1
+          open_set.put((1/(f_score[neighbor]+1), count, neighbor))
+          came_from[neighbor] = current
+          open_set_tracker.add(neighbor)  # we also need to add it to our tracker set
+          neighbor.makeopen()  # add open to the attribute of this neighbor as we have put
+        # it in open set so it will turn orange
+    draw()
+
+    if current != start:
+      closed_set.add(current)
+      current.makeclose()  # we have finished looking at all the neighbors of this node
+      # so we add closed as an attribute and turn it to blue
+
+  return False
+
+def elcleggfs(draw, grid, start, end):
+  count = 0
+  open_set = PriorityQueue()
+  open_set.put((0, count, start))   #put just adds(term for append), the 0 is our f_cost
+  #add the start node to the open set, count keeps track of when node was inserted
+  came_from = {} #where each node came from so we can retrace path at the end
+  g_score = {node: float("inf") for row in grid for node in row} #all nodes start at
+  #infinty distance away from start node as there's no path to get there yet
+  g_score[start] = 0 #g_score is distance from start, so 0 for start
+  closed_set = set()
+  closed_set.add(start)
+  f_score = {node: float("inf") for row in grid for node in row}
+  f_score[start] = heuristic(start.getpos(), end.getpos()) #estimate start- end distance
+
+  open_set_tracker = {start} #set to keep track of presents of nodes in priority queue
+# so we can determine if a node needs to be evaluated or not
+  while not open_set.empty(): #if open set is empty we've considered every node
+    #that is 'promising', if no path is yet found then there is no path to end
+    for event in pygame.event.get():
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid, start, end)
+          return True #allows exit before end is found
+
+    current = open_set.get()[2] #get the node from the priority queue
+    #the priority queue will mean we get the node with the lowest f-cost(the most
+#promising node),if the f-cost is the same then go by count(order of entry into queue)
+    open_set_tracker.remove(current) #we are now looking at current so its no longer
+# a part of the open set
+    if current == end:
+      reconstruct_path(came_from, end, draw) #call function to draw the shortest path
+      end.makeend() #so we can see the end node
+      start.makestart()
+      return True
+
+    for neighbor in current.neighbors: #look at every neighbor of current
+      if neighbor not in closed_set:
+        temp_g_score = g_score[current] + heuristic(current.getpos(),neighbor.getpos())
+        if temp_g_score < g_score[neighbor]: #if we have found a shorter path to neighbor
+          came_from[neighbor] = current #update so that current node is stored as path to
+        #get to neighbor
+          g_score[neighbor] = temp_g_score #new distance away from start node
+          f_score[neighbor] = temp_g_score + heuristic(neighbor.getpos(),end.getpos())
+          if neighbor not in open_set_tracker: #if not in open_set queue we need to add it
+            count = count + 1
+            open_set.put((1/f_score[neighbor], count, neighbor))
+            open_set_tracker.add(neighbor) #we also need to add it to our tracker set
+            neighbor.makeopen() #add open to the attribute of this neighbor as we have put
+          #it in open set so it will turn orange
+    draw()
+
+    if current != start:
+      closed_set.add(current)
+      current.makeclose() #we have finished looking at all the neighbors of this node
+      # so we add closed as an attribute and turn it to blue
+
+  return False
+
+
+
 def greedy(draw, grid, start, end):
   count = 0
   open_set = PriorityQueue()
   open_set.put((0, count, start))  # put just adds(term for append), the 0 is our f_cost
   # add the start node to the open set, count keeps track of when node was inserted
   came_from = {}  # where each node came from so we can retrace path at the end
-  g_score = {node: float("inf") for row in grid for node in row}  # all nodes start at
-  # infinty distance away from start node as there's no path to get there yet
-  g_score[start] = 0  # g_score is distance from start, so 0 for start
+  closed_set = set()
+  closed_set.add(start)
   f_score = {node: float("inf") for row in grid for node in row}
-  f_score[start] = heuristic(start.getpos(), end.getpos())  # estimate start- end distance
+  f_score[start] = heuristic(start.getpos(), end.getpos())  # estimate start-end distance
 
   open_set_tracker = {start}  # set to keep track of presents of nodes in priority queue
   # so we can determine if a node needs to be evaluated or not
@@ -230,7 +397,7 @@ def greedy(draw, grid, start, end):
 
     current = open_set.get()[2]  # get the node from the priority queue
     # the priority queue will mean we get the node with the lowest f-cost(the most
-    # promising node),if the f-cost is the same then go by count(order of entery into queue)
+    # promising node),if the f-cost is the same then go by count(order of entry into queue)
     open_set_tracker.remove(current)  # we are now looking at current so its no longer
     # a part of the open set
     if current == end:
@@ -239,23 +406,21 @@ def greedy(draw, grid, start, end):
       start.makestart()
       return True
 
-    for neighbor in current.neighbors:  # look at every neighbor of current
-      temp_g_score = g_score[current] + heuristic(current.getpos(), neighbor.getpos())
-
-      if temp_g_score < g_score[neighbor]:  # if we have found a shorter path to neighbor
-        came_from[neighbor] = current  # update so that current node is stored as path to
-        # get to neighbor
-        g_score[neighbor] = temp_g_score  # new distance away from start node
-        f_score[neighbor] = heuristic(neighbor.getpos(), end.getpos())
-        if neighbor not in open_set_tracker:  # if not in open_set queue we need to add it
-          count = count + 1
-          open_set.put((f_score[neighbor], count, neighbor))
-          open_set_tracker.add(neighbor)  # we also need to add it to our tracker set
-          neighbor.makeopen()  # add open to the attribute of this neighbor as we have put
+    for neighbor in current.neighbors: # look at every neighbor of current
+      if neighbor not in closed_set:
+          f_score[neighbor] = heuristic(neighbor.getpos(), end.getpos())
+          if neighbor not in open_set_tracker:  # if not in open_set queue we need to add it
+            count = count + 1
+            open_set.put((f_score[neighbor], count, neighbor))
+            came_from[neighbor] = current
+            print(f"Added {neighbor.getpos()} to came_from with parent {current.getpos()}")
+            open_set_tracker.add(neighbor)  # we also need to add it to our tracker set
+            neighbor.makeopen()  # add open to the attribute of this neighbor as we have put
           # it in open set so it will turn orange
     draw()
 
     if current != start:
+      closed_set.add(current)
       current.makeclose()  # we have finished looking at all the neighbors of this node
       # so we add closed as an attribute and turn it to blue
 
@@ -623,18 +788,37 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
 
             greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
+
+        if event.key == pygame.K_t and start and end:
+          #check to make sure there is a start and end node before algorithm is run
+            reset(grid, start, end) #removes all except the walls, start and end nodes
+
+            greedy1(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
         if event.key == pygame.K_v and start and end:
           #check to make sure there is a start and end node before algorithm is run
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
             versus(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
+        if event.key == pygame.K_h and start and end:
+          #check to make sure there is a start and end node before algorithm is run
+            reset(grid, start, end) #removes all except the walls, start and end nodes
+
+            hillrfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
+        if event.key == pygame.K_e and start and end:
+          #check to make sure there is a start and end node before algorithm is run
+            reset(grid, start, end) #removes all except the walls, start and end nodes
+
+            elcleggfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
         if event.key == pygame.K_p and start and end:
           #check to make sure there is a start and end node before algorithm is run
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
           
         
   pygame.quit()
