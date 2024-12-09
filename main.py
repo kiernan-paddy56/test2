@@ -1,8 +1,9 @@
-import pygame, sys, math, time
+import pygame, sys, math, time, random
 from queue import PriorityQueue
 from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
 import sqlite3
+clock = pygame.time.Clock()
 
 connection = sqlite3.connect('maps.db')
 
@@ -582,7 +583,7 @@ def versus(draw, grid, start, end):
     # that is 'promising', if no path is yet found then there is no path to end
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
-        pygame.quit()  # so we can exit function if takes too long or error occurs
+        pygame.quit()  # so we can exit function if it takes too long or error occurs
       # a part of the open set
 
       if event.type == pygame.KEYDOWN:
@@ -622,8 +623,9 @@ def versus(draw, grid, start, end):
               current.makeopen()
               current = neighbor
 
+        keys = pygame.key.get_pressed()  # Check for keys being held
 
-        elif event.key == pygame.K_RIGHT:
+        if keys[pygame.K_RIGHT]:
           for neighbor in current2.neighbors:
             if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
               came_from2[neighbor] = current2
@@ -631,7 +633,9 @@ def versus(draw, grid, start, end):
               current2.makepath2()
               current2 = neighbor
 
-        elif event.key == pygame.K_LEFT:
+        keys = pygame.key.get_pressed()  # Check for keys being held
+
+        if keys[pygame.K_LEFT]:
           for neighbor in current2.neighbors:
             if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
               came_from2[neighbor] = current2
@@ -639,7 +643,9 @@ def versus(draw, grid, start, end):
               current2.makepath2()
               current2 = neighbor
 
-        elif event.key == pygame.K_DOWN:
+        keys = pygame.key.get_pressed()  # Check for keys being held
+
+        if keys[pygame.K_DOWN]:
           for neighbor in current2.neighbors:
             if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
               came_from2[neighbor] = current2
@@ -647,7 +653,8 @@ def versus(draw, grid, start, end):
               current2.makepath2()
               current2 = neighbor
 
-        elif event.key == pygame.K_UP:
+        keys = pygame.key.get_pressed()  # Check for keys being held
+        if keys[pygame.K_UP]:
           for neighbor in current2.neighbors:
             if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
               came_from2[neighbor] = current2
@@ -682,6 +689,19 @@ def versus(draw, grid, start, end):
     draw()
 
   return False
+
+def randmap(draw, grid, ROWS):
+
+  for row in grid:  # for every node when we start a new map we must
+    for node in row:  # update all of the neighbors for this new setup of nodes
+      if node.isopen() or node.ispath() or node.isclosed() or node.ispath2() or node.isblock:
+        node.makeplain()
+      if random.randint(1,4) < 2:
+        node.makeblock()
+
+  draw()
+  return grid
+      
 
 
 def makegrid(rows, width): #store all of the nodes so they can be used
@@ -794,6 +814,7 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
             greedy1(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            print(start, end)
 
         if event.key == pygame.K_v and start and end:
           #check to make sure there is a start and end node before algorithm is run
@@ -819,8 +840,27 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
+
+        if event.key == pygame.K_q:
+          start = None
+          end = None
+          grid = makegrid(ROWS, width)
+          #check to make sure there is a start and end node before algorithm is run
+
+          randmap(lambda: draw(screen, grid, ROWS, width), grid, ROWS)
+          randrow = random.randint(0, ROWS - 1)
+          randcol = random.randint(0, ROWS - 1)
+          print(randrow, randcol)
+          start = grid[randrow][randcol]
+          start.makestart()
+          randrow = random.randint(0, ROWS - 1)
+          randcol = random.randint(0, ROWS - 1)
+          end = grid[randrow][randcol]
+          end.makeend()
+          print(start, end)
+
           
         
   pygame.quit()
-  
+
 main(screen, WIDTH) #call function
