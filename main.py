@@ -3,11 +3,11 @@ from queue import PriorityQueue
 from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
 import sqlite3
+from database import create_table, insert_grid, fetch_grid
 clock = pygame.time.Clock()
 
-connection = sqlite3.connect('maps.db')
+create_table()
 
-cursor = connection.cursor() #cursor object to execute SQL commands in the connected database
 
 
 WIDTH = 800
@@ -140,6 +140,10 @@ def endscreen(screen, winnner_text):
   pygame.time.delay(1000)
 
 
+
+def savemap(grid):
+  grid_name = input("enter grid")
+  insert_grid(grid_name, grid)
 
 def reset(grid, start, end):
   for row in grid:  # for every node when we start a new map we must
@@ -614,7 +618,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    if keys[pygame.K_a]:
+    elif keys[pygame.K_a]:
       for neighbor in current.neighbors:
         if current.row - 1 == neighbor.row and current.col == neighbor.col:
           came_from[neighbor] = current
@@ -622,7 +626,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    if keys[pygame.K_s]:
+    elif keys[pygame.K_s]:
       for neighbor in current.neighbors:
         if current.col + 1 == neighbor.col and current.row == neighbor.row:
           came_from[neighbor] = current
@@ -630,7 +634,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    if keys[pygame.K_w]:
+    elif keys[pygame.K_w]:
       for neighbor in current.neighbors:
         if current.col - 1 == neighbor.col and current.row == neighbor.row:
           came_from[neighbor] = current
@@ -638,7 +642,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    if keys[pygame.K_RIGHT]:
+    elif keys[pygame.K_RIGHT]:
       for neighbor in current2.neighbors:
         if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
           came_from2[neighbor] = current2
@@ -646,9 +650,8 @@ def versus(draw, grid, start, end):
           current2.makepath2()
           current2 = neighbor
 
-    keys = pygame.key.get_pressed()  # Check for keys being held
 
-    if keys[pygame.K_LEFT]:
+    elif keys[pygame.K_LEFT]:
       for neighbor in current2.neighbors:
         if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
           came_from2[neighbor] = current2
@@ -656,9 +659,8 @@ def versus(draw, grid, start, end):
           current2.makepath2()
           current2 = neighbor
 
-    keys = pygame.key.get_pressed()  # Check for keys being held
 
-    if keys[pygame.K_DOWN]:
+    elif keys[pygame.K_DOWN]:
       for neighbor in current2.neighbors:
         if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
           came_from2[neighbor] = current2
@@ -666,8 +668,7 @@ def versus(draw, grid, start, end):
           current2.makepath2()
           current2 = neighbor
 
-    keys = pygame.key.get_pressed()  # Check for keys being held
-    if keys[pygame.K_UP]:
+    elif keys[pygame.K_UP]:
       for neighbor in current2.neighbors:
         if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
           came_from2[neighbor] = current2
@@ -853,12 +854,17 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
+        if event.key == pygame.K_s and start and end:
+          savemap(grid)
+
+
 
         if event.key == pygame.K_q:
           start = None
           end = None
           grid = makegrid(ROWS, width)
           #check to make sure there is a start and end node before algorithm is run
+
 
           randmap(lambda: draw(screen, grid, ROWS, width), grid, ROWS)
           randrow = random.randint(0, ROWS - 1)
