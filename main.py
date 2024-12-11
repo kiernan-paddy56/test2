@@ -7,6 +7,9 @@ clock = pygame.time.Clock()
 
 connection = sqlite3.connect('maps.db')
 
+cursor = connection.cursor() #cursor object to execute SQL commands in the connected database
+
+
 WIDTH = 800
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, WIDTH)) #frame size of 800 by 800
@@ -126,6 +129,16 @@ class Node:
     if self.row < self.totalrows -1 and self.col < self.totalrows -1 and\
     not grid[self.row+1][self.col+1].isblock(): #rightdown
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
+
+def endscreen(screen, winnner_text):
+  screen.fill(GREEN)
+  font = pygame.font.Font(None, 74)
+  text = font.render(winnner_text, True, (255, 255, 255))  # White color for text
+  text_rect = text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+  screen.blit(text, text_rect)
+  pygame.display.flip()
+  pygame.time.delay(1000)
+
 
 
 def reset(grid, start, end):
@@ -591,76 +604,76 @@ def versus(draw, grid, start, end):
           reset(grid, start, end)
           return True
 
-        elif event.key == pygame.K_d:
-          for neighbor in current.neighbors:
-            if current.row + 1 == neighbor.row and current.col == neighbor.col:
-              came_from[neighbor] = current
-              neighbor.makeclose()
-              current.makeopen()
-              current = neighbor
+    keys = pygame.key.get_pressed()
 
-        elif event.key == pygame.K_a:
-          for neighbor in current.neighbors:
-            if current.row - 1 == neighbor.row and current.col == neighbor.col:
-              came_from[neighbor] = current
-              neighbor.makeclose()
-              current.makeopen()
-              current = neighbor
+    if  keys[pygame.K_d]:
+      for neighbor in current.neighbors:
+        if current.row + 1 == neighbor.row and current.col == neighbor.col:
+          came_from[neighbor] = current
+          neighbor.makeclose()
+          current.makeopen()
+          current = neighbor
 
-        elif event.key == pygame.K_s:
-          for neighbor in current.neighbors:
-            if current.col + 1 == neighbor.col and current.row == neighbor.row:
-              came_from[neighbor] = current
-              neighbor.makeclose()
-              current.makeopen()
-              current = neighbor
+    if keys[pygame.K_a]:
+      for neighbor in current.neighbors:
+        if current.row - 1 == neighbor.row and current.col == neighbor.col:
+          came_from[neighbor] = current
+          neighbor.makeclose()
+          current.makeopen()
+          current = neighbor
 
-        elif event.key == pygame.K_w:
-          for neighbor in current.neighbors:
-            if current.col - 1 == neighbor.col and current.row == neighbor.row:
-              came_from[neighbor] = current
-              neighbor.makeclose()
-              current.makeopen()
-              current = neighbor
+    if keys[pygame.K_s]:
+      for neighbor in current.neighbors:
+        if current.col + 1 == neighbor.col and current.row == neighbor.row:
+          came_from[neighbor] = current
+          neighbor.makeclose()
+          current.makeopen()
+          current = neighbor
 
-        keys = pygame.key.get_pressed()  # Check for keys being held
+    if keys[pygame.K_w]:
+      for neighbor in current.neighbors:
+        if current.col - 1 == neighbor.col and current.row == neighbor.row:
+          came_from[neighbor] = current
+          neighbor.makeclose()
+          current.makeopen()
+          current = neighbor
 
-        if keys[pygame.K_RIGHT]:
-          for neighbor in current2.neighbors:
-            if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
-              came_from2[neighbor] = current2
-              neighbor.makeclose()
-              current2.makepath2()
-              current2 = neighbor
+    if keys[pygame.K_RIGHT]:
+      for neighbor in current2.neighbors:
+        if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
+          came_from2[neighbor] = current2
+          neighbor.makeclose()
+          current2.makepath2()
+          current2 = neighbor
 
-        keys = pygame.key.get_pressed()  # Check for keys being held
+    keys = pygame.key.get_pressed()  # Check for keys being held
 
-        if keys[pygame.K_LEFT]:
-          for neighbor in current2.neighbors:
-            if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
-              came_from2[neighbor] = current2
-              neighbor.makeclose()
-              current2.makepath2()
-              current2 = neighbor
+    if keys[pygame.K_LEFT]:
+      for neighbor in current2.neighbors:
+        if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
+          came_from2[neighbor] = current2
+          neighbor.makeclose()
+          current2.makepath2()
+          current2 = neighbor
 
-        keys = pygame.key.get_pressed()  # Check for keys being held
+    keys = pygame.key.get_pressed()  # Check for keys being held
 
-        if keys[pygame.K_DOWN]:
-          for neighbor in current2.neighbors:
-            if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
-              came_from2[neighbor] = current2
-              neighbor.makeclose()
-              current2.makepath2()
-              current2 = neighbor
+    if keys[pygame.K_DOWN]:
+      for neighbor in current2.neighbors:
+        if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
+          came_from2[neighbor] = current2
+          neighbor.makeclose()
+          current2.makepath2()
+          current2 = neighbor
 
-        keys = pygame.key.get_pressed()  # Check for keys being held
-        if keys[pygame.K_UP]:
-          for neighbor in current2.neighbors:
-            if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
-              came_from2[neighbor] = current2
-              neighbor.makeclose()
-              current2.makepath2()
-              current2 = neighbor
+    keys = pygame.key.get_pressed()  # Check for keys being held
+    if keys[pygame.K_UP]:
+      for neighbor in current2.neighbors:
+        if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
+          came_from2[neighbor] = current2
+          neighbor.makeclose()
+          current2.makepath2()
+          current2 = neighbor
 
 
 
@@ -672,7 +685,8 @@ def versus(draw, grid, start, end):
       # call function to draw shortest path
       end.makeend()  # so we can see the end and start nodes
       start.makestart()
-      found = True
+      endscreen(screen, "player 1 won")
+
       return True
 
     elif current2 == end:
@@ -683,11 +697,11 @@ def versus(draw, grid, start, end):
       # call function to draw shortest path
       end.makeend()  # so we can see the end and start nodes
       start.makestart()
-      found = True
+      endscreen(screen, "player 2 won")
       return True
 
     draw()
-
+    clock.tick(15)
   return False
 
 def randmap(draw, grid, ROWS):
@@ -698,7 +712,6 @@ def randmap(draw, grid, ROWS):
         node.makeplain()
       if random.randint(1,4) < 2:
         node.makeblock()
-
   draw()
   return grid
       
@@ -710,7 +723,7 @@ def makegrid(rows, width): #store all of the nodes so they can be used
   for i in range(rows):
    grid.append([]) # creates a 2d array/ adds a new array for each row
    for j in range(rows):
-     node = Node(i, j, spacing, rows) #pass all of the parameters of node class in
+     node = Node(i, j, spacing, rows) #pass all the parameters of node class in
      grid[i].append(node) #adds the new node to the correct array for its row
   return grid
   
