@@ -637,7 +637,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    elif keys[pygame.K_a]:
+    if keys[pygame.K_a]:
       for neighbor in current.neighbors:
         if current.row - 1 == neighbor.row and current.col == neighbor.col:
           came_from[neighbor] = current
@@ -645,7 +645,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    elif keys[pygame.K_s]:
+    if keys[pygame.K_s]:
       for neighbor in current.neighbors:
         if current.col + 1 == neighbor.col and current.row == neighbor.row:
           came_from[neighbor] = current
@@ -653,7 +653,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    elif keys[pygame.K_w]:
+    if keys[pygame.K_w]:
       for neighbor in current.neighbors:
         if current.col - 1 == neighbor.col and current.row == neighbor.row:
           came_from[neighbor] = current
@@ -661,7 +661,7 @@ def versus(draw, grid, start, end):
           current.makeopen()
           current = neighbor
 
-    elif keys[pygame.K_RIGHT]:
+    if keys[pygame.K_RIGHT]:
       for neighbor in current2.neighbors:
         if current2.row + 1 == neighbor.row and current2.col == neighbor.col:
           came_from2[neighbor] = current2
@@ -670,7 +670,7 @@ def versus(draw, grid, start, end):
           current2 = neighbor
 
 
-    elif keys[pygame.K_LEFT]:
+    if keys[pygame.K_LEFT]:
       for neighbor in current2.neighbors:
         if current2.row - 1 == neighbor.row and current2.col == neighbor.col:
           came_from2[neighbor] = current2
@@ -679,7 +679,7 @@ def versus(draw, grid, start, end):
           current2 = neighbor
 
 
-    elif keys[pygame.K_DOWN]:
+    if keys[pygame.K_DOWN]:
       for neighbor in current2.neighbors:
         if current2.col + 1 == neighbor.col and current2.row == neighbor.row:
           came_from2[neighbor] = current2
@@ -687,7 +687,7 @@ def versus(draw, grid, start, end):
           current2.makepath2()
           current2 = neighbor
 
-    elif keys[pygame.K_UP]:
+    if keys[pygame.K_UP]:
       for neighbor in current2.neighbors:
         if current2.col - 1 == neighbor.col and current2.row == neighbor.row:
           came_from2[neighbor] = current2
