@@ -4,6 +4,7 @@ from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
 import sqlite3
 from database import create_table, insert_grid, fetch_grid
+from inputboxfunc import input_box
 clock = pygame.time.Clock()
 
 create_table()
@@ -39,6 +40,11 @@ class Node:
     self.width = width #width and height of the blocks
     self.neighbors = [] #array for all the neighbors of a node
     self.totalrows = totalrows
+
+  def to_dict(self):
+    for row in grid:
+        for node in row:
+            grid_json = grid_json + node.to_dict
 
   def getpos(self):
     return self.row, self.col
@@ -141,9 +147,22 @@ def endscreen(screen, winnner_text):
 
 
 
-def savemap(grid):
-  grid_name = input("enter grid")
-  insert_grid(grid_name, grid)
+def savemap(grid, screen):
+  grid_name = input_box(screen, "choose map name:")
+  if grid_name:
+    insert_grid(grid_name, grid)
+
+def getmap(draw, grid, screen):
+  grid_name = input_box(screen, "name the map:")
+  if grid_name:
+    got_grid = fetch_grid(grid_name)
+    if got_grid:
+      grid = got_grid
+    else:
+      print("no grid with that name")
+
+  draw()
+  return grid
 
 def reset(grid, start, end):
   for row in grid:  # for every node when we start a new map we must
@@ -855,7 +874,10 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
         if event.key == pygame.K_s and start and end:
-          savemap(grid)
+          savemap(grid, screen)
+
+        if event.key == pygame.K_m and start and end:
+          getmap(lambda: draw(screen, grid, ROWS, width),grid, screen)
 
 
 
@@ -871,7 +893,7 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           randcol = random.randint(0, ROWS - 1)
           print(randrow, randcol)
           start = grid[randrow][randcol]
-          start.makestart()
+          start.makestart() #add random start and end nodes
           randrow = random.randint(0, ROWS - 1)
           randcol = random.randint(0, ROWS - 1)
           end = grid[randrow][randcol]

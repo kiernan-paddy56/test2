@@ -22,7 +22,8 @@ def create_table():
 def insert_grid(name, grid):
     conn = connect_db()
     cursor = conn.cursor()
-    grid_json = json.dumps(grid)  # Serialize grid (turn to plain string so it can be saved easily)
+    grid_json = json.dumps([[node.to_dict() for node in row] for row in grid])  # Serialize grid -turn to plain string
+    # so it can be saved easily
     cursor.execute('INSERT INTO grids (name, grid_data) VALUES (?, ?)', (name, grid_json))
     conn.commit()
     conn.close()
