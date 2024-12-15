@@ -41,10 +41,10 @@ class Node:
     self.neighbors = [] #array for all the neighbors of a node
     self.totalrows = totalrows
 
-  def to_dict(self):
-    for row in grid:
-        for node in row:
-            grid_json = grid_json + node.to_dict
+  def get_node_info_(self):
+    array = [self.row, self.col, self.color]
+    return array
+
 
   def getpos(self):
     return self.row, self.col
@@ -152,17 +152,46 @@ def savemap(grid, screen):
   if grid_name:
     insert_grid(grid_name, grid)
 
-def getmap(draw, grid, screen):
+def getmap(screen, rows, width):
+  grid = []
   grid_name = input_box(screen, "name the map:")
   if grid_name:
     got_grid = fetch_grid(grid_name)
     if got_grid:
-      grid = got_grid
+      grid = turn_data_to_map(draw, got_grid, rows, width)
     else:
       print("no grid with that name")
 
-  draw()
   return grid
+
+def turn_data_to_map(draw, got_grid, rows, width):
+  spacing = width // rows
+  grid = makegrid(rows, width)
+  count = 0
+  grid = []
+  for i in range(rows):
+    grid.append([])  # creates a 2d array/ adds a new array for each row
+    for j in range(rows):
+      row = got_grid[count][0]
+      col = got_grid[count][1]
+      color = got_grid[count][2]
+      count += 1
+      node = Node(row, col, spacing, rows)  # pass all the parameters of node class in
+      grid[i].append(node)
+      if color == [255, 255, 255]:
+        node.makeplain()
+      elif color == [0, 0, 0]:
+        node.makeblock()
+      elif color == [0, 255, 0]:
+        node.makestart()
+      elif color == [255, 0, 0]:
+        node.makeend()
+
+  return grid
+
+
+
+
 
 def reset(grid, start, end):
   for row in grid:  # for every node when we start a new map we must
@@ -876,8 +905,8 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
         if event.key == pygame.K_s and start and end:
           savemap(grid, screen)
 
-        if event.key == pygame.K_m and start and end:
-          getmap(lambda: draw(screen, grid, ROWS, width),grid, screen)
+        if event.key == pygame.K_m:
+          getmap(screen, ROWS, width)
 
 
 

@@ -13,6 +13,7 @@ ORANGE = (255, 165, 0)
 PURPLE = (128, 0, 128)
 
 
+
 def input_box(screen, prompt):
     font = pygame.font.Font(None, 36)  # Default font, size 36
     input_rect = pygame.Rect(200, 300, 400, 50)  # Input box dimensions
@@ -59,3 +60,6 @@ def input_box(screen, prompt):
         clock.tick(30)
 
     return text  # Return the user input
+
+
+
