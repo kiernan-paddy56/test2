@@ -184,10 +184,12 @@ def turn_data_to_map(draw, got_grid, rows, width):
         node.makeblock()
       elif color == [0, 255, 0]:
         node.makestart()
+        start = node
       elif color == [255, 0, 0]:
         node.makeend()
+        end = node
 
-  return grid
+  return grid, start, end
 
 
 
@@ -750,7 +752,7 @@ def versus(draw, grid, start, end):
       return True
 
     draw()
-    clock.tick(15)
+    clock.tick(5)
   return False
 
 def randmap(draw, grid, ROWS):
@@ -876,7 +878,6 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
             greedy1(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-            print(start, end)
 
         if event.key == pygame.K_v and start and end:
           #check to make sure there is a start and end node before algorithm is run
@@ -906,7 +907,8 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           savemap(grid, screen)
 
         if event.key == pygame.K_m:
-          getmap(screen, ROWS, width)
+          grid, start, end = getmap(screen, ROWS, width)
+          draw(screen, grid, ROWS, width)
 
 
 
