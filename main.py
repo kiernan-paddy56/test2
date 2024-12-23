@@ -752,7 +752,7 @@ def versus(draw, grid, start, end):
       return True
 
     draw()
-    clock.tick(5)
+    clock.tick(10)
   return False
 
 def randmap(draw, grid, ROWS):
@@ -761,7 +761,7 @@ def randmap(draw, grid, ROWS):
     for node in row:  # update all of the neighbors for this new setup of nodes
       if node.isopen() or node.ispath() or node.isclosed() or node.ispath2() or node.isblock:
         node.makeplain()
-      if random.randint(1,4) < 2:
+      if random.randint(1,6) < 3:
         node.makeblock()
   draw()
   return grid
@@ -804,7 +804,7 @@ def mousepos(rows, width):
 
 
 def main(screen, width): #Runs the whole process, eg if quit clicked or node changed
-  ROWS = 50 #dynamic can be changed 
+  ROWS = 50 #dynamic can be changed
   grid = makegrid(ROWS,width) #make grid
 
   start = None
