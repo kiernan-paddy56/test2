@@ -777,20 +777,31 @@ def makegrid(rows, width): #store all of the nodes so they can be used
 
 
 def depth_map(draw, grid):
-  open_set = PriorityQueue()
+  open_set = [grid[0][0]]
   count = 0
+  depth = -1
+  set_tracker = set()
+  for rows in grid:
+    for node in rows:
+      node.update_neighbors(grid)
+
   for rows in grid:
     for node in rows:
       node.makeblock()
-      node.update_neighbors(grid)
 
   for rows in grid[::2]:
     for node in rows[::2]:
       node.makeplain()
-      open_set.put((count, node))
       count = count + 1 # order nodes
+      set_tracker.add(node)
 
-  while not open_set.empty(): #so that every node is connected to the main path and there
+  set_tracker.remove(grid[0][0])
+  start = random.choice(list(set_tracker))
+  set_tracker.remove(start) #make sure end isn't same square as start
+  end = random.choice(list(set_tracker))
+  set_tracker.add(start)
+
+  while set_tracker: #so that every node is connected to the main path and there
     # are no closed loops (every spot is accessible on the map)
     for event in pygame.event.get():
       if event.type == pygame.KEYDOWN:
@@ -798,25 +809,31 @@ def depth_map(draw, grid):
           return True #allows exit before end is found
 
     valid_nodes = set()
-    current = open_set.get()[1] #get the node from the priority queue
+    current = open_set[depth] #get the node from the stack
+    print(current.col, current.row)
     for neighbor in current.neighbors:
       for sub_neighbor in neighbor.neighbors:
-        if sub_neighbor.isplain():
-          valid_nodes.add(sub_neighbor) #finds all the white squares that are possible connections
+        if sub_neighbor.isplain() and (sub_neighbor.col == current.col or sub_neighbor.row == current.row):
+          if sub_neighbor in set_tracker:
+            valid_nodes.add(sub_neighbor) #finds all the white squares that are possible connections
+
+
 
     if valid_nodes:
       random_node = random.choice(list(valid_nodes)) #so map is unique
-      if random_node.col == current.col or random_node.row == current.row: # so it's not diagonal
-        path_node_col = int(0.5 * (random_node.col + current.col)) #get the node in the middle so we
-        path_node_row = int(0.5 * (random_node.row + current.row)) # can turn it to pathway
-        grid[path_node_row][path_node_col].makeplain()
-      else:
-        open_set.put((0, current)) #if it was diagonal from the node we need to add it back in
-          # as we haven't used it for making pathways
+      path_node_col = int(0.5 * (random_node.col + current.col)) #get the node in the middle so we
+      path_node_row = int(0.5 * (random_node.row + current.row)) # can turn it to pathway
+      grid[path_node_row][path_node_col].makeplain()
+      open_set.append(random_node)
+      set_tracker.remove(random_node)
+      draw()
+      depth = -1
+
     else:
-      print("No more valid nodes available.")
+      depth = depth -1
 
   draw()
+  return start, end
 
 def drawgrid(screen, rows, width): #for drawing our background grid lines
   spacing = width// rows #finds the spacing between the nodes/node width
@@ -947,17 +964,9 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           start = None
           end = None
           grid = makegrid(ROWS, width)
-          depth_map(lambda: draw(screen, grid, ROWS, width), grid)
-          randrow = random.randint(0, ROWS - 2)
-          randcol = random.randint(0, ROWS - 2)
-          print(randrow, randcol)
-          start = grid[randrow][randcol]
-          start.makestart()  # add random start and end nodes
-          randrow = random.randint(0, ROWS - 2)
-          randcol = random.randint(0, ROWS - 2)
-          end = grid[randrow][randcol]
+          start, end = depth_map(lambda: draw(screen, grid, ROWS, width), grid)
           end.makeend()
-          print(start, end)
+          start.makestart()
 
         if event.key == pygame.K_s and start and end:
           savemap(grid, screen)
