@@ -11,9 +11,9 @@ create_table()
 
 
 
-WIDTH = 800
+WIDTH = 700
 pygame.init()
-screen = pygame.display.set_mode((WIDTH, WIDTH)) #frame size of 800 by 800
+screen = pygame.display.set_mode((WIDTH+200, WIDTH)) #frame size of 800 by 800
 pygame.display.set_caption('Pathfinding')
 
 BLACK = (0, 0, 0)
@@ -810,7 +810,7 @@ def depth_map(draw, grid):
 
     valid_nodes = set()
     current = open_set[depth] #get the node from the stack
-    print(current.col, current.row)
+
     for neighbor in current.neighbors:
       for sub_neighbor in neighbor.neighbors:
         if sub_neighbor.isplain() and (sub_neighbor.col == current.col or sub_neighbor.row == current.row):
