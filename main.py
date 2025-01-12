@@ -298,8 +298,6 @@ def astar(draw, grid, start, end):
     current = open_set.get()[2] #get the node from the priority queue
     #the priority queue will mean we get the node with the lowest f-cost(the most
 #promising node),if the f-cost is the same then go by count(order of entry into queue)
-    open_set_tracker.remove(current) #we are now looking at current so its no longer
-# a part of the open set
     if current == end:
       reconstruct_path(came_from, end, draw) #call function to draw the shortest path
       end.makeend() #so we can see the end node
@@ -317,7 +315,6 @@ def astar(draw, grid, start, end):
         if neighbor not in open_set_tracker: #if not in open_set queue we need to add it
           count = count + 1
           open_set.put((f_score[neighbor], count, neighbor))
-          open_set_tracker.add(neighbor) #we also need to add it to our tracker set
           neighbor.makeopen() #add open to the attribute of this neighbor as we have put
           #it in open set so it will turn orange
     draw()
@@ -763,7 +760,7 @@ def randmap(draw, grid, ROWS):
         node.makeplain()
       if random.randint(1,6) < 3:
         node.makeblock()
-  draw()
+        draw()
   return grid
       
 
@@ -777,7 +774,49 @@ def makegrid(rows, width): #store all of the nodes so they can be used
      node = Node(i, j, spacing, rows) #pass all the parameters of node class in
      grid[i].append(node) #adds the new node to the correct array for its row
   return grid
-  
+
+
+def depth_map(draw, grid):
+  open_set = PriorityQueue()
+  count = 0
+  for rows in grid:
+    for node in rows:
+      node.makeblock()
+      node.update_neighbors(grid)
+
+  for rows in grid[::2]:
+    for node in rows[::2]:
+      node.makeplain()
+      open_set.put((count, node))
+      count = count + 1 # order nodes
+
+  while not open_set.empty(): #so that every node is connected to the main path and there
+    # are no closed loops (every spot is accessible on the map)
+    for event in pygame.event.get():
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          return True #allows exit before end is found
+
+    valid_nodes = set()
+    current = open_set.get()[1] #get the node from the priority queue
+    for neighbor in current.neighbors:
+      for sub_neighbor in neighbor.neighbors:
+        if sub_neighbor.isplain():
+          valid_nodes.add(sub_neighbor) #finds all the white squares that are possible connections
+
+    if valid_nodes:
+      random_node = random.choice(list(valid_nodes)) #so map is unique
+      if random_node.col == current.col or random_node.row == current.row: # so it's not diagonal
+        path_node_col = int(0.5 * (random_node.col + current.col)) #get the node in the middle so we
+        path_node_row = int(0.5 * (random_node.row + current.row)) # can turn it to pathway
+        grid[path_node_row][path_node_col].makeplain()
+      else:
+        open_set.put((0, current)) #if it was diagonal from the node we need to add it back in
+          # as we haven't used it for making pathways
+    else:
+      print("No more valid nodes available.")
+
+  draw()
 
 def drawgrid(screen, rows, width): #for drawing our background grid lines
   spacing = width// rows #finds the spacing between the nodes/node width
@@ -903,6 +942,23 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
+        if event.key == pygame.K_y:
+          #check to make sure there is a start and end node before algorithm is run
+          start = None
+          end = None
+          grid = makegrid(ROWS, width)
+          depth_map(lambda: draw(screen, grid, ROWS, width), grid)
+          randrow = random.randint(0, ROWS - 2)
+          randcol = random.randint(0, ROWS - 2)
+          print(randrow, randcol)
+          start = grid[randrow][randcol]
+          start.makestart()  # add random start and end nodes
+          randrow = random.randint(0, ROWS - 2)
+          randcol = random.randint(0, ROWS - 2)
+          end = grid[randrow][randcol]
+          end.makeend()
+          print(start, end)
+
         if event.key == pygame.K_s and start and end:
           savemap(grid, screen)
 
@@ -917,6 +973,8 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           end = None
           grid = makegrid(ROWS, width)
           #check to make sure there is a start and end node before algorithm is run
+
+
 
 
           randmap(lambda: draw(screen, grid, ROWS, width), grid, ROWS)
