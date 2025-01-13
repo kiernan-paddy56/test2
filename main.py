@@ -4,13 +4,13 @@ from pygame.constants import KEYDOWN
 from pygame.locals import QUIT
 import sqlite3
 from database import create_table, insert_grid, fetch_grid
-from inputboxfunc import input_box
+from inputboxfunc import input_box, display_box
 clock = pygame.time.Clock()
 
 create_table()
 
 
-
+ROWS = 50 #default rows
 WIDTH = 700
 pygame.init()
 screen = pygame.display.set_mode((WIDTH+200, WIDTH)) #frame size of 800 by 800
@@ -148,19 +148,24 @@ def endscreen(screen, winnner_text):
 
 
 def savemap(grid, screen):
-  grid_name = input_box(screen, "choose map name:")
+  grid_name = input_box(screen, "choose map name:", 200, 300, 400, 50)
   if grid_name:
     insert_grid(grid_name, grid)
+  else:
+    return None
 
 def getmap(screen, rows, width):
   grid = []
-  grid_name = input_box(screen, "name the map:")
+  grid_name = input_box(screen, "name the map:", 200, 300, 400, 50)
   if grid_name:
     got_grid = fetch_grid(grid_name)
     if got_grid:
       grid = turn_data_to_map(draw, got_grid, rows, width)
     else:
       print("no grid with that name")
+
+  else:
+    return None
 
   return grid
 
@@ -837,12 +842,13 @@ def depth_map(draw, grid):
 
 def drawgrid(screen, rows, width): #for drawing our background grid lines
   spacing = width// rows #finds the spacing between the nodes/node width
-  for i in range(rows):
+  for i in range(rows+1):
     pygame.draw.line(screen, GREY,(0, i*spacing), (width,i*spacing)) #horizontal lines
     pygame.draw.line(screen, GREY,(i*spacing, 0), (i*spacing,width)) #verticle lines
 
 def draw(screen, grid, rows, width): #function to do all of the drawing with each frame
-  screen.fill(WHITE) #paint over everthing on the last frame
+  pygame.draw.rect(screen, WHITE, (0, 0, width, width))
+ #paint over everthing on the last frame
   for row in grid: #for every row(array) within grid
     for node in row: #for every node within that row(array)
       node.draw(screen) #draw the node onto the screen
@@ -859,10 +865,9 @@ def mousepos(rows, width):
   return row, col
 
 
-def main(screen, width): #Runs the whole process, eg if quit clicked or node changed
-  ROWS = 50 #dynamic can be changed
+def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or node changed
   grid = makegrid(ROWS,width) #make grid
-
+  pygame.draw.rect(screen, WHITE, (width, 0, 200, width))
   start = None
   end = None # keep track of start and end position
 
@@ -870,30 +875,42 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
   started = False #if algorithm has started or not
 
   while run:
+
     draw(screen, grid, ROWS, width)
     for event in pygame.event.get(): #loop through all events that could happen
-      
       if event.type == pygame.QUIT: #if cross is hit in corner
         run = False
       if pygame.mouse.get_pressed()[0]: #if left mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
-        node = grid[row][col]
-        if not start and node != end: #if the start block hasnt yet been placed
-          start = node
-          start.makestart() #run the makestart function on the start object
-        elif not end and node != start:
-          end = node
-          end.makeend()
-        elif node != start and node != end and not node.isblock():
-          node.makeblock()
+        x,y = pygame.mouse.get_pos()
+        if 0 < x < width and 0 < y < width: #make sure its on the grid
+          node = grid[row][col]
+          if not start and node != end: #if the start block hasnt yet been placed
+            start = node
+            start.makestart() #run the makestart function on the start object
+          elif not end and node != start:
+            end = node
+            end.makeend()
+          elif node != start and node != end and not node.isblock():
+            node.makeblock()
+        elif width < x < (width+200) and 0 < y < 35:
+          new_row = input_box(screen, "Rows: ", width, 0, 200, 35)
+          if isinstance(new_row, int) and width%ROWS == 0:
+              main(screen, width, new_row)
+          else:
+            print("sorry this value doesn't work")
+            main(screen, width, ROWS)
+
       elif pygame.mouse.get_pressed()[2]: #if right mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
-        node = grid[row][col]
-        node.makeplain() #turn node back to a blank white square node
-        if node == start:#so if start node is removed then the next time they left-
-          start = None #click it will be the start node
-        if node == end:
-          end = None
+        x, y = pygame.mouse.get_pos()
+        if 0 < x < width and 0 < y < width:  # make sure its on the grid
+          node = grid[row][col]
+          node.makeplain() #turn node back to a blank white square node
+          if node == start:#so if start node is removed then the next time they left-
+            start = None #click it will be the start node
+          if node == end:
+            end = None
 
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_a and start and end:
@@ -972,8 +989,10 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
           savemap(grid, screen)
 
         if event.key == pygame.K_m:
-          grid, start, end = getmap(screen, ROWS, width)
-          draw(screen, grid, ROWS, width)
+          holder = getmap(screen, ROWS, width)
+          if holder is not None:
+            grid, start, end = holder
+            draw(screen, grid, ROWS, width)
 
 
 
@@ -1002,4 +1021,4 @@ def main(screen, width): #Runs the whole process, eg if quit clicked or node cha
         
   pygame.quit()
 
-main(screen, WIDTH) #call function
+main(screen, WIDTH, ROWS) #call function
