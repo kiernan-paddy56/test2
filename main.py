@@ -206,8 +206,10 @@ def reset(grid, start, end):
       node.update_neighbors(grid)
       if node.isopen() or node.ispath() or node.isclosed() or node.ispath2():
         node.makeplain()
-  start.makestart()
-  end.makeend()
+  if start:
+    start.makestart()
+  if end:
+    end.makeend()
 
 
 def heuristic(p1, p2): # finds shortest distance between 2 points
@@ -299,6 +301,9 @@ def astar(draw, grid, start, end):
         if event.key == pygame.K_r:
           reset(grid, start, end)
           return True #allows exit before end is found
+
+      if event.type == pygame.QUIT:
+        pygame.quit()
 
     current = open_set.get()[2] #get the node from the priority queue
     #the priority queue will mean we get the node with the lowest f-cost(the most
@@ -780,8 +785,7 @@ def makegrid(rows, width): #store all of the nodes so they can be used
      grid[i].append(node) #adds the new node to the correct array for its row
   return grid
 
-
-def depth_map(draw, grid):
+def depth_map(draw, grid, width):
   open_set = [grid[0][0]]
   count = 0
   depth = -1
@@ -808,10 +812,8 @@ def depth_map(draw, grid):
 
   while set_tracker: #so that every node is connected to the main path and there
     # are no closed loops (every spot is accessible on the map)
-    for event in pygame.event.get():
-      if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_r:
-          return True #allows exit before end is found
+
+
 
     valid_nodes = set()
     current = open_set[depth] #get the node from the stack
@@ -865,18 +867,30 @@ def mousepos(rows, width):
   return row, col
 
 
+def draw_side(screen, width, rows, algorithm):
+  pygame.draw.rect(screen, WHITE, (width+5, 0, 200, width))
+  display_box(screen, "Go ", width, 0, 100, 35, GREEN)
+  display_box(screen, f"Rows: {rows}", width + 100, 0, 100, 35, GREEN)
+  display_box(screen, "reset ", width, 40, 100, 35, GREEN)
+  display_box(screen, "clear", width + 100, 40, 100, 35, GREEN)
+  display_box(screen, "Dijkstra ", width, 80, 100, 35, GREEN)
+  display_box(screen, "A* ", width + 100, 80, 100, 35, GREEN)
+
+  pygame.display.update()
+
 def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or node changed
   grid = makegrid(ROWS,width) #make grid
-  pygame.draw.rect(screen, WHITE, (width, 0, 200, width))
+  current_algorithm = 0
   start = None
   end = None # keep track of start and end position
+  screen.fill(WHITE)
 
   run = True #if main loop is running
   started = False #if algorithm has started or not
 
   while run:
-
     draw(screen, grid, ROWS, width)
+    draw_side(screen, width, ROWS, current_algorithm)
     for event in pygame.event.get(): #loop through all events that could happen
       if event.type == pygame.QUIT: #if cross is hit in corner
         run = False
@@ -893,13 +907,45 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
             end.makeend()
           elif node != start and node != end and not node.isblock():
             node.makeblock()
-        elif width < x < (width+200) and 0 < y < 35:
-          new_row = input_box(screen, "Rows: ", width, 0, 200, 35)
-          if isinstance(new_row, int) and width%ROWS == 0:
+
+        elif width < x < (width+100) and 0 < y < 35:
+          if start and end and current_algorithm != 0:
+            reset(grid,start,end)
+            if current_algorithm == 1:
+              dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            if current_algorithm == 2:
+              astar(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+
+
+
+        elif width+100 < x < (width+200) and 0 < y < 35:
+          new_row = input_box(screen, "Rows: ", width+100, 0, 200, 35)
+          try:
+            new_row = int(new_row)  # Convert to an integer
+            if width % new_row == 0:  # make sure it's a multiple of our grid
               main(screen, width, new_row)
-          else:
-            print("sorry this value doesn't work")
-            main(screen, width, ROWS)
+            else:
+              raise ValueError("Input does not divide width evenly.")
+          except (ValueError, TypeError):
+            print("Sorry, this value doesn't work")
+          except pygame.error:  # Handle the quit exception
+            print("Pygame was quit.")
+            run = False
+
+        elif width < x < (width+100) and 40 < y < 75:
+          if start and end:
+            reset(grid, start, end)
+
+        elif (width+100) < x < (width+200) and 40 < y < 75:
+            start = None
+            end = None
+            grid = makegrid(ROWS, width)
+
+        elif (width) < x < (width+100) and 80 < y < 115:
+            current_algorithm = 1
+
+        elif (width+100) < x < (width+200) and 80 < y < 115:
+            current_algorithm = 2
 
       elif pygame.mouse.get_pressed()[2]: #if right mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
@@ -981,7 +1027,7 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
           start = None
           end = None
           grid = makegrid(ROWS, width)
-          start, end = depth_map(lambda: draw(screen, grid, ROWS, width), grid)
+          start, end = depth_map(lambda: draw(screen, grid, ROWS, width), grid, width)
           end.makeend()
           start.makestart()
 

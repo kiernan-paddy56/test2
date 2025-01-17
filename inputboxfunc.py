@@ -17,6 +17,7 @@ PURPLE = (128, 0, 128)
 
 def input_box(screen, prompt, x, y, width, height):
     running = True
+    pygame.draw.rect(screen, WHITE, (x, y, width, height))
     font = pygame.font.Font(None, 18)  # Default font, size 18
     input_rect = pygame.Rect(x, y, width, height) # Position and size (x, y, width, height)
     color_active = pygame.Color(MAGENTA)
@@ -24,16 +25,14 @@ def input_box(screen, prompt, x, y, width, height):
     color = color_active
     active = True
     text = ""
-    clock = pygame.time.Clock()
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return None
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # Toggle active state if input box clicked
+                # turns pink if input box clicked
                 if input_rect.collidepoint(event.pos):
                     active = True
                 else:
@@ -50,26 +49,25 @@ def input_box(screen, prompt, x, y, width, height):
                     else:
                         text += event.unicode  # Append typed character
 
-        # Clear screen and draw elements
-        text_surface = font.render(prompt + text, True, (0, 0, 0))
-        pygame.draw.rect(screen, color, input_rect, 2)
-        screen.blit(text_surface, (input_rect.x + 10, input_rect.y + 10))
 
-        # Update display
-        pygame.display.flip()
-        clock.tick(30)
+            # Clear screen and draw elements
+            pygame.draw.rect(screen, WHITE, (x, y, width, height))
+            text_surface = font.render(prompt + text, True, (0, 0, 0))
+            pygame.draw.rect(screen, color, input_rect, 2)
+            screen.blit(text_surface, (input_rect.x + 10, input_rect.y + 10))
 
+            # Update display
+            pygame.display.flip()
     if text:
         return text  # Return the user input
 
-def display_box(screen, prompt, x, y, width, height):
+def display_box(screen, prompt, x, y, width, height, color):
     font = pygame.font.Font(None, 18)  # Default font, size 18
     input_rect = pygame.Rect(x, y, width, height)  # Position and size (x, y, width, height)
-    color_inactive = pygame.Color(CYAN)
-    color = color_inactive
+
 
     text_surface = font.render(prompt, True, (0, 0, 0))
     pygame.draw.rect(screen, color, input_rect, 2)
     screen.blit(text_surface, (input_rect.x + 10, input_rect.y + 10))
-    pygame.display.update()
+
 
