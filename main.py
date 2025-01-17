@@ -1081,92 +1081,14 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
 
         if event.key == pygame.K_r: #clear all
           reset(grid, start, end)
-        
-        
-        if event.key == pygame.K_d and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
-        if event.key == pygame.K_g and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-
-
-        if event.key == pygame.K_t and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            greedy1(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-
-        if event.key == pygame.K_v and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            versus(lambda: draw(screen, grid, ROWS, width), grid, start, end, width)
-
-        if event.key == pygame.K_h and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            hillrfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-
-        if event.key == pygame.K_e and start and end:
-          #check to make sure there is a start and end node before algorithm is run
-            reset(grid, start, end) #removes all except the walls, start and end nodes
-
-            elcleggfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
         if event.key == pygame.K_p and start and end:
           #check to make sure there is a start and end node before algorithm is run
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
             play(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-
-        if event.key == pygame.K_y:
-          #check to make sure there is a start and end node before algorithm is run
-          start = None
-          end = None
-          grid = makegrid(ROWS, width)
-          start, end = depth_map(lambda: draw(screen, grid, ROWS, width), grid, width)
-          end.makeend()
-          start.makestart()
-
-        if event.key == pygame.K_s and start and end:
-          savemap(grid, screen)
-
-        if event.key == pygame.K_m:
-          holder = getmap(screen, ROWS, width)
-          if holder is not None:
-            grid, start, end = holder
-            draw(screen, grid, ROWS, width)
-
-
-
-        if event.key == pygame.K_q:
-          start = None
-          end = None
-          grid = makegrid(ROWS, width)
-          #check to make sure there is a start and end node before algorithm is run
-
-
-
-
-          randmap(lambda: draw(screen, grid, ROWS, width), grid, ROWS)
-          randrow = random.randint(0, ROWS - 1)
-          randcol = random.randint(0, ROWS - 1)
-          print(randrow, randcol)
-          start = grid[randrow][randcol]
-          start.makestart() #add random start and end nodes
-          randrow = random.randint(0, ROWS - 1)
-          randcol = random.randint(0, ROWS - 1)
-          end = grid[randrow][randcol]
-          end.makeend()
-          print(start, end)
 
           
         
