@@ -136,11 +136,11 @@ class Node:
     not grid[self.row+1][self.col+1].isblock(): #rightdown
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
 
-def endscreen(screen, winnner_text):
-  screen.fill(GREEN)
+def endscreen(screen, winnner_text, width):
+  pygame.draw.rect(screen, GREEN, (0, 0, width, width))
   font = pygame.font.Font(None, 74)
   text = font.render(winnner_text, True, (255, 255, 255))  # White color for text
-  text_rect = text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+  text_rect = text.get_rect(center=((screen.get_width()-200) // 2, screen.get_height() // 2))
   screen.blit(text, text_rect)
   pygame.display.flip()
   pygame.time.delay(1000)
@@ -647,7 +647,7 @@ def play(draw, grid, start, end):
   return False
 
 
-def versus(draw, grid, start, end):
+def versus(draw, grid, start, end, width):
   came_from = {}  # where each node came from so we can retrace path at the end
   came_from2 = {}
   found = False  # while the end node is not reached
@@ -664,6 +664,13 @@ def versus(draw, grid, start, end):
         if event.key == pygame.K_r:
           reset(grid, start, end)
           return True
+
+      if pygame.mouse.get_pressed()[0]: #if left mouse button clicked
+        x,y = pygame.mouse.get_pos()
+        if width < x < (width+100) and 40 < y < 75:
+          if start and end:
+            reset(grid, start, end)
+            return True
 
     keys = pygame.key.get_pressed()
 
@@ -743,7 +750,7 @@ def versus(draw, grid, start, end):
       # call function to draw shortest path
       end.makeend()  # so we can see the end and start nodes
       start.makestart()
-      endscreen(screen, "player 1 won")
+      endscreen(screen, "player 1 won", width)
 
       return True
 
@@ -755,7 +762,7 @@ def versus(draw, grid, start, end):
       # call function to draw shortest path
       end.makeend()  # so we can see the end and start nodes
       start.makestart()
-      endscreen(screen, "player 2 won")
+      endscreen(screen, "player 2 won", width)
       return True
 
     draw()
@@ -812,7 +819,22 @@ def depth_map(draw, grid, width):
 
   while set_tracker: #so that every node is connected to the main path and there
     # are no closed loops (every spot is accessible on the map)
+    for event in pygame.event.get():
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_r:
+          reset(grid, start, end)
+          return True #allows exit before end is found
 
+      if event.type == pygame.QUIT:
+        pygame.quit()
+
+      if pygame.mouse.get_pressed()[0]:  # if left mouse button clicked
+        row, col = mousepos(ROWS, width)  # gets row and col of what was clicked on
+        x, y = pygame.mouse.get_pos()
+        if width < x < (width + 100) and 40 < y < 75:
+          if start and end:
+            reset(grid, start, end)
+            return True
 
 
     valid_nodes = set()
@@ -869,12 +891,40 @@ def mousepos(rows, width):
 
 def draw_side(screen, width, rows, algorithm):
   pygame.draw.rect(screen, WHITE, (width+5, 0, 200, width))
-  display_box(screen, "Go ", width, 0, 100, 35, GREEN)
-  display_box(screen, f"Rows: {rows}", width + 100, 0, 100, 35, GREEN)
-  display_box(screen, "reset ", width, 40, 100, 35, GREEN)
-  display_box(screen, "clear", width + 100, 40, 100, 35, GREEN)
-  display_box(screen, "Dijkstra ", width, 80, 100, 35, GREEN)
-  display_box(screen, "A* ", width + 100, 80, 100, 35, GREEN)
+  color_1 = GREEN
+  color_2 = GREEN
+  color_3 = GREEN
+  color_4 = GREEN
+  color_5 = GREEN
+  color_6 = GREEN
+  if algorithm == 1:
+    color_1 = MAGENTA
+  elif algorithm == 2:
+    color_2 = MAGENTA
+  elif algorithm == 3:
+    color_3 = MAGENTA
+  elif algorithm == 4:
+    color_4 = MAGENTA
+  elif algorithm == 5:
+    color_5 = MAGENTA
+  elif algorithm == 6:
+    color_6 = MAGENTA
+  display_box(screen, "Go ", width, 0, 100, 35, CYAN)
+  display_box(screen, f"Rows: {rows}", width + 100, 0, 100, 35, CYAN)
+  display_box(screen, "reset ", width, 40, 100, 35, CYAN)
+  display_box(screen, "clear", width + 100, 40, 100, 35, CYAN)
+  display_box(screen, "Dijkstra ", width, 120, 100, 35, color_1)
+  display_box(screen, "A* ", width + 100, 120, 100, 35, color_2)
+  display_box(screen, "Greedy ", width, 160, 100, 35, color_3)
+  display_box(screen, "EFS ", width + 100, 160, 100, 35, color_4)
+  display_box(screen, "RFS ", width, 200, 100, 35, color_5)
+  display_box(screen, "Greedy A* ", width + 100, 200, 100, 35, color_6)
+  display_box(screen, "Random map ", width, 280, 100, 35, BLUE)
+  display_box(screen, "DFS map ", width + 100, 280, 100, 35, BLUE)
+  display_box(screen, "Player Vs PLayer ", width, 360, 200, 35, RED)
+  display_box(screen, "Save map ", width, 440, 100, 35, YELLOW)
+  display_box(screen, "Load map", width + 100, 440, 100, 35, YELLOW)
+
 
   pygame.display.update()
 
@@ -897,6 +947,7 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
       if pygame.mouse.get_pressed()[0]: #if left mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
         x,y = pygame.mouse.get_pos()
+
         if 0 < x < width and 0 < y < width: #make sure its on the grid
           node = grid[row][col]
           if not start and node != end: #if the start block hasnt yet been placed
@@ -913,8 +964,16 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
             reset(grid,start,end)
             if current_algorithm == 1:
               dijkstra(lambda: draw(screen, grid, ROWS, width), grid, start, end)
-            if current_algorithm == 2:
+            elif current_algorithm == 2:
               astar(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            elif current_algorithm == 3:
+              greedy(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            elif current_algorithm == 4:
+              elcleggfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            elif current_algorithm == 5:
+              hillrfs(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            elif current_algorithm == 6:
+              greedy1(lambda: draw(screen, grid, ROWS, width), grid, start, end)
 
 
 
@@ -941,11 +1000,57 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
             end = None
             grid = makegrid(ROWS, width)
 
-        elif (width) < x < (width+100) and 80 < y < 115:
+        elif width < x < (width+100) and 120 < y < 155:
             current_algorithm = 1
 
-        elif (width+100) < x < (width+200) and 80 < y < 115:
+        elif (width+100) < x < (width+200) and 120 < y < 155:
             current_algorithm = 2
+
+        elif width < x < (width+100) and 160 < y < 195:
+            current_algorithm = 3
+
+        elif (width+100) < x < (width+200) and 160 < y < 195:
+            current_algorithm = 4
+
+        elif width < x < (width+100) and 200 < y < 235:
+            current_algorithm = 5
+
+        elif (width+100) < x < (width+200) and 200 < y < 235:
+            current_algorithm = 6
+
+        elif width < x < (width+100) and 280 < y < 315:
+          grid = makegrid(ROWS, width)
+          # check to make sure there is a start and end node before algorithm is run
+
+          randmap(lambda: draw(screen, grid, ROWS, width), grid, ROWS)
+          randrow = random.randint(0, ROWS - 1)
+          randcol = random.randint(0, ROWS - 1)
+          start = grid[randrow][randcol]
+          start.makestart()  # add random start and end nodes
+          randrow = random.randint(0, ROWS - 1)
+          randcol = random.randint(0, ROWS - 1)
+          end = grid[randrow][randcol]
+          end.makeend()
+
+        elif (width+100) < x < (width+200) and 280 < y < 315:
+          grid = makegrid(ROWS, width)
+          start, end = depth_map(lambda: draw(screen, grid, ROWS, width), grid, width)
+          end.makeend()
+          start.makestart()
+
+        elif width < x < (width + 200) and 360 < y < 395:
+          if start and end:
+            reset(grid, start, end)
+            versus(lambda: draw(screen, grid, ROWS, width), grid, start, end, width)
+
+        elif width < x < (width+100) and 440 < y < 475:
+            savemap(grid, screen)
+
+        elif (width+100) < x < (width+200) and 440 < y < 475:
+          holder = getmap(screen, ROWS, width)
+          if holder is not None:
+            grid, start, end = holder
+            draw(screen, grid, ROWS, width)
 
       elif pygame.mouse.get_pressed()[2]: #if right mouse button clicked
         row,col = mousepos(ROWS,width) #gets row and col of what was clicked on
@@ -1002,7 +1107,7 @@ def main(screen, width, ROWS): #Runs the whole process, eg if quit clicked or no
           #check to make sure there is a start and end node before algorithm is run
             reset(grid, start, end) #removes all except the walls, start and end nodes
 
-            versus(lambda: draw(screen, grid, ROWS, width), grid, start, end)
+            versus(lambda: draw(screen, grid, ROWS, width), grid, start, end, width)
 
         if event.key == pygame.K_h and start and end:
           #check to make sure there is a start and end node before algorithm is run
