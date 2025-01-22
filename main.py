@@ -136,6 +136,19 @@ class Node:
     not grid[self.row+1][self.col+1].isblock(): #rightdown
       self.neighbors.append(grid[self.row+1][self.col+1]) #is node rightdown available
 
+
+class Priority:
+  def __init__(self):
+    self.queue =[]
+
+  def put(self, f_score, count, node):
+    placed = False
+    new_node = f_score, count, node
+    for i in range(len(self.queue)):
+      if placed is False and (f_score < self.queue[i][0] or (f_score == self.queue[i][0] and count < self.queue[i][1])):
+        self.queue.insert(i, new_node)
+        placed = True
+
 def endscreen(screen, winnner_text, width):
   pygame.draw.rect(screen, GREEN, (0, 0, width, width))
   font = pygame.font.Font(None, 74)
@@ -195,7 +208,6 @@ def turn_data_to_map(draw, got_grid, rows, width):
         end = node
 
   return grid, start, end
-
 
 
 
